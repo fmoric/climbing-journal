@@ -23,6 +23,9 @@ ClimbRoute _route(String id, String name,
     );
 
 void main() {
+  // The PDF report loads its font from the app's assets.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('Grades', () {
     test('route systems share one scale', () {
       final fr = Grades.rank('6a', GradeSystem.french);
@@ -115,16 +118,16 @@ void main() {
         for (final r in await repo.watchAllRoutes().first) r.id: r,
       };
       final s = summarizeYear(2026, ascents, routes);
-      expect(s.ascents.length, 20);
-      expect(s.sends, 13);
-      expect(s.days, 15);
-      expect(s.perMonth, [2, 1, 3, 3, 3, 2, 1, 0, 2, 3, 0, 0]);
+      expect(s.ascents.length, 21);
+      expect(s.sends, 14);
+      expect(s.days, 16);
+      expect(s.perMonth, [2, 1, 3, 3, 3, 2, 1, 1, 2, 3, 0, 0]);
       expect(s.hardest[Discipline.sport]?.grade, '6c');
       expect(s.hardest[Discipline.boulder]?.grade, '6B+');
       expect(s.pyramids[Discipline.sport]!.first.grade, '6c');
       final sixA = s.pyramids[Discipline.sport]!
           .firstWhere((r) => r.grade == '6a');
-      expect(sixA.count, 3);
+      expect(sixA.count, 4);
     });
 
     test('builds a PDF report', () async {
@@ -139,7 +142,6 @@ void main() {
         crags: crags,
         climber: 'Test climber',
         generatedAt: DateTime(2026, 12, 31),
-        useWebFonts: false,
       );
       expect(String.fromCharCodes(bytes.take(4)), '%PDF');
       expect(bytes.length, greaterThan(2000));
@@ -151,7 +153,6 @@ void main() {
         routes: const {},
         crags: const {},
         climber: 'Test climber',
-        useWebFonts: false,
       );
       expect(String.fromCharCodes(bytes.take(4)), '%PDF');
     });

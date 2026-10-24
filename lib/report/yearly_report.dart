@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -11,17 +12,16 @@ import '../models/enums.dart';
 
 /// Yearly ascent report (FR-9), built on the device.
 ///
-/// Uses Noto Sans for full diacritics (č, ć, š, ž, đ) when it can be
-/// fetched or is cached; otherwise falls back to the built-in font.
+/// Uses the bundled Liberation Sans (SIL OFL), so names with č, ć, š, ž
+/// and đ render correctly, offline too.
 Future<Uint8List> buildYearlyReport({
   required YearSummary summary,
   required Map<String, ClimbRoute> routes,
   required Map<String, Crag> crags,
   required String climber,
   DateTime? generatedAt,
-  bool useWebFonts = true,
 }) async {
-  final theme = useWebFonts ? await _theme() : pw.ThemeData.base();
+  final theme = await _theme();
   final made = generatedAt ?? DateTime.now();
   final doc = pw.Document(
     title: 'Climbing report ${summary.year}',
@@ -74,14 +74,16 @@ const _accent = PdfColor.fromInt(0xFF0F6E6A);
 const _ground = PdfColor.fromInt(0xFFF4F2EE);
 const _line = PdfColor.fromInt(0xFFD5D0C6);
 
+pw.ThemeData? _cachedTheme;
+
 Future<pw.ThemeData> _theme() async {
-  try {
-    final base = await PdfGoogleFonts.notoSansRegular();
-    final bold = await PdfGoogleFonts.notoSansBold();
-    return pw.ThemeData.withFont(base: base, bold: bold);
-  } catch (_) {
-    return pw.ThemeData.base();
-  }
+  final cached = _cachedTheme;
+  if (cached != null) return cached;
+  final base = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/LiberationSans-Regular.ttf'));
+  final bold = pw.Font.ttf(
+      await rootBundle.load('assets/fonts/LiberationSans-Bold.ttf'));
+  return _cachedTheme = pw.ThemeData.withFont(base: base, bold: bold);
 }
 
 pw.Widget _header(int year, String climber, DateTime made) {

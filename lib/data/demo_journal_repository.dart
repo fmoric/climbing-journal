@@ -167,6 +167,7 @@ class DemoJournalRepository implements JournalRepository {
     route('r12', sea, 's-slabs', 'Green Ledge', sport, '6b+', fr);
     route('r13', gym, null, 'Yellow circuit', Discipline.gym, '6b', fr);
     route('r14', gym, null, 'Blue arete', Discipline.gym, '6a', fr);
+    route('r15', north, 's-left', 'Žuta ploča', sport, '6a', fr);
 
     // A year of sample ascents, so history and the yearly report have data.
     final y = now.year;
@@ -210,6 +211,7 @@ class DemoJournalRepository implements JournalRepository {
     ascent('r3', 6, 7, rp, attempts: 2);
     ascent('r7', 6, 21, os, notes: 'Three pitches, long day.');
     ascent('r8', 7, 12, rp, attempts: 2);
+    ascent('r15', 8, 9, os, notes: 'Šuma u hladu do podneva.');
     ascent('r4', 9, 6, pr, attempts: 2);
     ascent('r4', 9, 20, pr, attempts: 3);
     ascent('r11', 10, 4, os);
