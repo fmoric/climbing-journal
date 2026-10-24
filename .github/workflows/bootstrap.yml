@@ -20,7 +20,7 @@ jobs:
         run: |
           flutter create --org hr.climbingjournal --project-name climbing_journal --platforms=android,ios,web .
           rm -f test/widget_test.dart
-          flutter pub add firebase_core firebase_auth cloud_firestore uuid geolocator
+          flutter pub add firebase_core firebase_auth cloud_firestore uuid geolocator pdf printing
           flutter --version > flutter-version.txt
 
       - uses: actions/upload-artifact@v7
