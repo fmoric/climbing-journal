@@ -1,22 +1,29 @@
 name: Build
 
-# Compiles and tests the app on every push and pull request.
-# Platform folders and pubspec are generated here the same way setup.sh does
-# locally, so CI always checks the code against current package versions.
+# On every push: analyze, test and build the Android debug APK.
+# On main: also build the web demo (sample data, no Firebase) and publish
+# it to the gh-pages branch, served by GitHub Pages.
 
 on:
   push:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  android:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
@@ -26,19 +33,15 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Generate project files
-        run: |
-          flutter create --org hr.climbingjournal --project-name climbing_journal --platforms=android,ios .
-          rm -f test/widget_test.dart
-          flutter pub add firebase_core firebase_auth cloud_firestore uuid
-
       - name: Firebase options stub (CI only)
-        # The real file comes from `flutterfire configure` and holds project keys.
-        # CI only needs it to compile; this stub is never committed.
+        # The real file comes from `flutterfire configure`. CI only needs it
+        # to compile; the stub is never committed.
         run: |
           if [ ! -f lib/firebase_options.dart ]; then
             cp ci/firebase_options_stub.dart lib/firebase_options.dart
           fi
+
+      - run: flutter pub get
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos
@@ -49,8 +52,23 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: climbing-journal-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 14
+
+      - name: Build web demo
+        run: flutter build web --release --dart-define=DEMO=true --base-href /climbing-journal/
+
+      - name: Publish web demo to the gh-pages branch
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          cd build/web
+          touch .nojekyll
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Web demo from ${GITHUB_SHA::7}"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gh-pages
