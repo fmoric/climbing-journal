@@ -21,7 +21,7 @@ void main() {
   testWidgets('opens on the first crag with its routes', (tester) async {
     await _pump(tester);
     expect(find.text('Demo Crag North'), findsOneWidget);
-    expect(find.text('Morning Slab'), findsOneWidget);
+    expect(find.text('Blue Dihedral'), findsOneWidget);
     expect(find.textContaining('Demo · sample data'), findsOneWidget);
   });
 

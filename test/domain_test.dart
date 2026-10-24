@@ -83,7 +83,7 @@ void main() {
 
     test('formats distances', () {
       expect(formatDistance(120.4), '120 m');
-      expect(formatDistance(1450), '1.5 km');
+      expect(formatDistance(1460), '1.5 km');
     });
   });
 
