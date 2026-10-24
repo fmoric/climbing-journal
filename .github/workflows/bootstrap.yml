@@ -1,0 +1,38 @@
+name: Bootstrap
+
+# One-off: generates the Flutter platform folders and pubspec on a machine
+# with the Flutter SDK, so they can be committed to the repo.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Generate project
+        run: |
+          flutter create --org hr.climbingjournal --project-name climbing_journal --platforms=android,ios,web .
+          rm -f test/widget_test.dart
+          flutter pub add firebase_core firebase_auth cloud_firestore uuid geolocator
+          flutter --version > flutter-version.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: generated
+          include-hidden-files: true
+          path: |
+            pubspec.yaml
+            pubspec.lock
+            analysis_options.yaml
+            .metadata
+            android/
+            ios/
+            web/
+            flutter-version.txt
