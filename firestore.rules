@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Climbing Journal — invite-only circle.
+// Shared: crags, sectors, routes. Private by default: ascents.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function memberDoc() {
+      return /databases/$(database)/documents/members/$(request.auth.uid);
+    }
+
+    // A /members/{uid} document is the invitation.
+    function isMember() {
+      return signedIn() && exists(memberDoc());
+    }
+
+    function isAdmin() {
+      return isMember() && get(memberDoc()).data.role == 'admin';
+    }
+
+    // Every shared write records who made it.
+    function stampedByMe() {
+      return request.resource.data.updatedBy == request.auth.uid;
+    }
+
+    match /members/{uid} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+
+    match /crags/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stampedByMe();
+      allow delete: if isAdmin();
+    }
+
+    match /sectors/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stampedByMe();
+      allow delete: if isAdmin();
+    }
+
+    match /routes/{id} {
+      allow read: if isMember();
+      allow create, update: if isMember() && stampedByMe();
+      allow delete: if isAdmin();
+    }
+
+    match /ascents/{id} {
+      allow read: if isMember()
+        && (resource.data.userId == request.auth.uid
+            || resource.data.visibility == 'circle');
+      allow create: if isMember()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isMember()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isMember()
+        && resource.data.userId == request.auth.uid;
+    }
+  }
+}
