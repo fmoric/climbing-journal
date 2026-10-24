@@ -44,10 +44,32 @@ jobs:
       - run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze --no-fatal-infos
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos 2>&1 | tee analyze.log
+
+      - name: Report analyzer errors as annotations
+        if: failure()
+        run: |
+          if [ -f analyze.log ]; then
+            python3 -c "import sys;m=open('analyze.log').read()[-60000:];print('::error title=flutter analyze::'+m.replace('%','%25').replace('\\n','%0A'))"
+          fi
 
       - name: Test
-        run: flutter test
+        run: |
+          set -o pipefail
+          flutter test --reporter expanded 2>&1 | tee test.log
+
+      - name: Report test failures as annotations
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          lines = open('test.log', encoding='utf-8', errors='replace').read().splitlines()
+          keep = [l for l in lines if l.strip()][-220:]
+          msg = '\n'.join(keep)[-60000:]
+          msg = msg.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::error title=flutter test::' + msg)
+          PY
 
       - name: Build debug APK
         run: flutter build apk --debug
