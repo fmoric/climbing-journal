@@ -257,14 +257,19 @@ class _LogTabState extends State<LogTab> {
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(20, 8, 20, 8),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Routes',
                               style: TextStyle(
                                   fontSize: 17, fontWeight: FontWeight.w700)),
-                          Text('Tap a route to log it',
-                              style: TextStyle(
-                                  fontSize: 13, color: AppColors.quiet)),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text('Tap a route to log it',
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 13, color: AppColors.quiet)),
+                          ),
                         ],
                       ),
                     ),

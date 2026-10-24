@@ -293,16 +293,11 @@ class _PyramidCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Grade pyramid · ${disciplineLabel(discipline)}',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700)),
-                const Text('Sends only',
-                    style: TextStyle(fontSize: 12, color: AppColors.quiet)),
-              ],
-            ),
+            Text('Grade pyramid · ${disciplineLabel(discipline)}',
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            const Text('Sends only',
+                style: TextStyle(fontSize: 12, color: AppColors.quiet)),
             const SizedBox(height: 12),
             if (rows.isEmpty)
               const Text('No sends yet.',
