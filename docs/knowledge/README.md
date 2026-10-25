@@ -15,6 +15,7 @@ Each article stands alone and carries YAML frontmatter (title, tags, created, so
 | [flutter-ci-as-remote-build-machine.md](flutter-ci-as-remote-build-machine.md) | Building and testing Flutter on GitHub Actions without a local SDK |
 | [android-sideloading-signing-and-mdm.md](android-sideloading-signing-and-mdm.md) | Signing, stable APK links, unknown-sources and work-profile blocks |
 | [github-pages-from-actions-branch.md](github-pages-from-actions-branch.md) | Flutter web on GitHub Pages via a gh-pages branch |
+| [flutter-web-pwa-offline.md](flutter-web-pwa-offline.md) | Installable offline Flutter web app; own service worker |
 | [flutter-local-first-storage-and-backup.md](flutter-local-first-storage-and-backup.md) | Repository pattern, sembast, JSON backup |
 | [firebase-for-small-apps.md](firebase-for-small-apps.md) | Firebase basics, invite-only rules, console setup |
 | [flutter-pdf-reports-with-diacritics.md](flutter-pdf-reports-with-diacritics.md) | PDF generation with Croatian characters |
