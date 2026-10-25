@@ -32,7 +32,17 @@ The first page load happens before the worker controls the page, so runtime cach
 1. At build time, list every file in the build (skip `*.symbols`, `skwasm*` for a JS build) and write the list into the worker, with a cache name derived from a hash of the files.
 2. On `install`, `cache.add` each file (`Promise.allSettled`, so one failure does not abort the rest), then `skipWaiting()`.
 3. On `activate`, delete other caches and `clients.claim()`.
-4. On `fetch`, stale-while-revalidate: answer from cache, refresh in the background; for navigations with no network, fall back to the cached `./`.
+4. On `fetch` for same-origin files, **network first** with `cache: 'no-cache'` (cheap 304s) and a 4-second limit, then the cache. Cross-origin: cache first.
+
+## Updates must actually reach the phone
+
+The first version used stale-while-revalidate and precached with `cache.add()`. A user then kept seeing an old, buggy build in normal Chrome while incognito was fine. Causes and fixes:
+
+- GitHub Pages sends `Cache-Control: max-age=600`, so precaching through the HTTP cache can store **old** files right after a deploy. Precache with `fetch(new Request(url, { cache: 'reload' }))`.
+- Stale-while-revalidate always shows the previous version first. Network-first shows a new deploy on the next online open.
+- Register with `updateViaCache: 'none'` and reload once on `controllerchange` (only if the page already had a controller) so a newly activated worker takes over without the user doing anything.
+- Hash the **final** files, including the edited `index.html` and the worker template, into the cache name; otherwise two deploys can share a cache name.
+- A phone stuck on an old worker recovers after opening online and reloading twice, or by clearing the site's data (which also deletes its stored logbook).
 
 Register it from a small script injected into `index.html`, and call `navigator.storage.persist()` to ask Chrome not to evict the app's storage.
 
