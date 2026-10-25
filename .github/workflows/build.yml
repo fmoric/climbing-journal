@@ -1,8 +1,8 @@
 name: Build
 
-# Analyze, test and build the Android APK. On main: also publish the APK as the "latest" release (direct download
-# link), and to GitHub Pages the web demo (/climbing-journal/, sample data)
-# and the installable web app (/climbing-journal/app/, local mode).
+# Analyze, test and build the Android APK. On main, also publish the APK
+# as the "latest" release (direct download link), and to GitHub Pages the
+# web demo (/climbing-journal/) and the installable web app (/app/).
 
 # Runs only when started by hand (Actions tab → Build → Run workflow, or
 # the API), so routine pushes and docs changes cost no Actions minutes.
