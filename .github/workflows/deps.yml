@@ -1,0 +1,38 @@
+name: Add dependencies
+
+# Manual helper: runs `flutter pub add` with the given packages and pushes
+# the updated pubspec to the `deps` branch, ready to merge into main.
+
+on:
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: Space-separated package names
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  add:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Add packages
+        env:
+          PACKAGES: ${{ inputs.packages }}
+        run: flutter pub add $PACKAGES
+
+      - name: Push to the deps branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B deps
+          git add pubspec.yaml pubspec.lock
+          git commit -m "Add dependencies: ${{ inputs.packages }}"
+          git push --force origin deps
