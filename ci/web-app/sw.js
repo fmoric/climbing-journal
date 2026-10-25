@@ -1,17 +1,22 @@
 'use strict';
 
 // Service worker for the installed web app (/climbing-journal/app/).
-// Stale-while-revalidate: every GET is answered from the cache when
-// possible and refreshed in the background, so the app opens without
-// signal after one online visit, and a new deploy shows on the next open.
+// On install it caches every file of the build. Then stale-while-revalidate:
+// every GET is answered from the cache when possible and refreshed in the
+// background, so the app opens without signal after one online visit.
 
-const CACHE = 'climbing-journal-app-v1';
-const SHELL = ['./', 'index.html', 'flutter_bootstrap.js', 'main.dart.js', 'manifest.json'];
+// Filled in at build time by prepare.py: a cache name per build and the
+// list of the build's files.
+const CACHE = '__CACHE__';
+const PRECACHE = __PRECACHE__;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).catch(() => undefined),
+    (async () => {
+      const cache = await caches.open(CACHE);
+      await Promise.allSettled(PRECACHE.map((url) => cache.add(url)));
+    })(),
   );
 });
 

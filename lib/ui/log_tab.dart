@@ -70,6 +70,12 @@ class _LogTabState extends State<LogTab> {
   }
 
   Future<void> _changeCrag(List<Crag> crags) async {
+    if (crags.isEmpty) {
+      // Nothing to choose from yet: go straight to adding one.
+      final crag = await _newCrag();
+      if (crag != null) _selectCrag(crag, 'Just added');
+      return;
+    }
     final picked = await showModalBottomSheet<Crag>(
       context: context,
       useSafeArea: true,

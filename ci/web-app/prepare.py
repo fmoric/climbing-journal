@@ -7,9 +7,9 @@ app:  adds the service worker for offline use, asks the browser to keep
 demo: names it "Climbing Journal Demo" so the two don't look alike when
       both are added to a home screen.
 """
+import hashlib
 import json
 import pathlib
-import shutil
 import sys
 
 build = pathlib.Path(sys.argv[1])
@@ -34,7 +34,22 @@ index = index_path.read_text()
 if kind == 'demo':
     index = index.replace('<title>Climbing Journal</title>', '<title>Climbing Journal Demo</title>')
 else:
-    shutil.copy(here / 'sw.js', build / 'sw.js')
+    files = sorted(
+        str(f.relative_to(build)).replace('\\', '/')
+        for f in build.rglob('*')
+        if f.is_file()
+        and not f.name.endswith('.symbols')
+        and not f.name.startswith('skwasm')
+        and f.name not in ('flutter_service_worker.js', 'sw.js')
+    )
+    digest = hashlib.sha256()
+    for name in files:
+        digest.update(name.encode())
+        digest.update((build / name).read_bytes())
+    sw = (here / 'sw.js').read_text()
+    sw = sw.replace("'__CACHE__'", json.dumps('climbing-journal-app-' + digest.hexdigest()[:12]))
+    sw = sw.replace('__PRECACHE__', json.dumps(['./'] + files, indent=2))
+    (build / 'sw.js').write_text(sw)
     script = """
   <script>
     if ('serviceWorker' in navigator) {

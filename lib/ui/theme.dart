@@ -61,6 +61,10 @@ ThemeData buildTheme() {
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
       ),
     ),
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      backgroundColor: AppColors.accent,
+      foregroundColor: Colors.white,
+    ),
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: AppColors.surface,
       indicatorColor: AppColors.accentTint,
