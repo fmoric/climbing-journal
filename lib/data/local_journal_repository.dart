@@ -178,15 +178,16 @@ class LocalJournalRepository implements JournalRepository {
   /// Counts in a backup file, for the confirmation dialog. Throws a
   /// [FormatException] if the file is not a Climbing Journal backup.
   static BackupInfo inspectBackup(String json) {
-    final Object? doc;
+    final Object? decoded;
     try {
-      doc = jsonDecode(json);
+      decoded = jsonDecode(json);
     } on FormatException {
       throw const FormatException('This file is not valid JSON.');
     }
-    if (doc is! Map || doc['format'] != backupFormat) {
+    if (decoded is! Map || decoded['format'] != backupFormat) {
       throw const FormatException('This is not a Climbing Journal backup.');
     }
+    final Map<dynamic, dynamic> doc = decoded;
     final version = doc['version'];
     if (version is! int || version > backupVersion) {
       throw const FormatException(

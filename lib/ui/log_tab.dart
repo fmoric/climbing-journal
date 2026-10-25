@@ -358,7 +358,7 @@ class _LogTabState extends State<LogTab> {
                         padding: const EdgeInsets.fromLTRB(12, 0, 12, 100),
                         sliver: SliverList.separated(
                           itemCount: shown.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 6),
                           itemBuilder: (context, i) => _RouteTile(
                             route: shown[i],

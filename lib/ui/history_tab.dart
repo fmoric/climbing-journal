@@ -320,7 +320,7 @@ class _HistoryTabState extends State<HistoryTab> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             sliver: SliverList.separated(
               itemCount: entry.value.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              separatorBuilder: (_, _) => const SizedBox(height: 6),
               itemBuilder: (context, i) {
                 final a = entry.value[i];
                 final r = routes[a.routeId];
