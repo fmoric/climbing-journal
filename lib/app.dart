@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'config.dart';
 import 'data/demo_journal_repository.dart';
 import 'data/firestore_journal_repository.dart';
+import 'data/local_database.dart';
+import 'data/local_journal_repository.dart';
 import 'screens/sign_in_screen.dart';
 import 'ui/home_shell.dart';
 import 'ui/theme.dart';
@@ -14,11 +16,62 @@ class ClimbingJournalApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Widget home;
+    if (kDemo) {
+      home = const _DemoHome();
+    } else if (kCloud) {
+      home = const _AuthGate();
+    } else {
+      home = const _LocalHome();
+    }
     return MaterialApp(
       title: 'Climbing Journal',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
-      home: kDemo ? const _DemoHome() : const _AuthGate(),
+      home: home,
+    );
+  }
+}
+
+/// Local mode: opens the on-device database, then the app.
+class _LocalHome extends StatefulWidget {
+  const _LocalHome();
+
+  @override
+  State<_LocalHome> createState() => _LocalHomeState();
+}
+
+class _LocalHomeState extends State<_LocalHome> {
+  late final Future<LocalJournalRepository> _repo = openLocalDatabase().then(
+    (db) => LocalJournalRepository(
+      db,
+      onWriteError: (e, _) => debugPrint('Local write failed: $e'),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<LocalJournalRepository>(
+      future: _repo,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('Could not open the logbook: ${snap.error}',
+                    textAlign: TextAlign.center),
+              ),
+            ),
+          );
+        }
+        final repo = snap.data;
+        if (repo == null) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
+        }
+        return HomeShell(repo: repo);
+      },
     );
   }
 }
@@ -38,8 +91,8 @@ class _DemoHomeState extends State<_DemoHome> {
       HomeShell(repo: _repo, climber: 'Demo climber');
 }
 
-/// Auth state is cached on the device, so a signed-in user reaches the
-/// app without signal.
+/// Cloud mode (M2). Auth state is cached on the device, so a signed-in
+/// user reaches the app without signal.
 class _AuthGate extends StatelessWidget {
   const _AuthGate();
 

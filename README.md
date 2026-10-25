@@ -1,18 +1,36 @@
 # Climbing Journal
 
-Offline-first climbing logbook for a small, invite-only circle. Flutter (Android + iOS) on Firebase.
+Offline-first climbing logbook. Flutter (Android, iOS, web).
 
-The functional spec is the living document in the Clibing Journal project. This repo implements M1: logging, routes with duplicate check, history, grade pyramid and the yearly PDF report.
+The functional spec is the living document in the Clibing Journal project.
 
-**Web demo** (sample data, no sign-in, nothing saved): https://fmoric.github.io/climbing-journal/ — rebuilt on every push to `main`.
+## Install on Android
 
-## Setup
+Download **[climbing-journal.apk](https://github.com/fmoric/climbing-journal/releases/download/latest/climbing-journal.apk)** on the phone and open it. Android asks once to allow installs from your browser or file app.
+
+Each push to `main` publishes a new build at the same link. Installing it updates the app and keeps your logbook.
+
+**Web demo** (sample data, nothing saved): https://fmoric.github.io/climbing-journal/
+
+## Modes
+
+| Mode | Build | Storage |
+| --- | --- | --- |
+| Local (default, M1) | `flutter run` | On the device; no account. Backup export/import in History |
+| Demo | `--dart-define=DEMO=true` | In memory, sample data |
+| Cloud (M2) | `--dart-define=CLOUD=true` | Firebase sign-in and sync |
+
+Local mode keeps data only on the phone. Uninstalling the app deletes it, so export a backup regularly.
+
+## Signing
+
+Release APKs are signed with `android/signing/sideload.p12`, committed so every build updates the installed app. Anyone with this repo can sign with it, which is acceptable for personal sideloading only. Replace it, and keep the new key out of the repo, before any store release.
+
+## Cloud setup (M2)
 
 1. Install the Flutter SDK and the Firebase CLI (`npm i -g firebase-tools`), then run `firebase login`.
 2. Create a Firebase project in the console. Enable **Authentication → Email/Password** and **Firestore**.
 3. Run `./setup.sh`. When `flutterfire configure` asks, pick the project from step 2.
-
-To run the demo locally without Firebase: `flutter run --dart-define=DEMO=true`.
 
 ## Create your account
 
@@ -36,14 +54,14 @@ Sign in, add a crag, then try it in airplane mode: the crag appears at once and 
 | Path | Purpose |
 | --- | --- |
 | `lib/models/` | Crag, Sector, ClimbRoute, Ascent and enums; plain maps to and from Firestore |
-| `lib/data/` | Repository interface; Firestore and in-memory demo implementations |
+| `lib/data/` | Repository interface; local (sembast), Firestore and demo implementations |
 | `lib/domain/` | Grades and conversion, nearest crag, duplicate matching, stats |
 | `lib/report/` | Yearly PDF report |
-| `lib/ui/` | Log tab, quick log, add route, history |
+| `lib/ui/` | Log tab, quick log, add route, history, backup |
 | `lib/screens/` | Sign-in |
 | `firestore.rules` | Members only; shared crags/sectors/routes; owner-only ascents |
 | `firestore.indexes.json` | Composite indexes for the repository's queries |
-| `test/` | Model, domain, report and screen-flow tests |
+| `test/` | Model, domain, local storage, backup, report and screen-flow tests |
 
 ## Data model
 

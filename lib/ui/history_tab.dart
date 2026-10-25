@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../data/journal_repository.dart';
+import '../data/local_journal_repository.dart';
 import '../domain/stats.dart';
 import '../models/ascent.dart';
 import '../models/climb_route.dart';
 import '../models/crag.dart';
 import '../models/enums.dart';
 import '../report/yearly_report.dart';
+import 'backup_actions.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
 /// History (FR-6): year, discipline filter, grade pyramid, ascent list,
 /// and the yearly PDF report (FR-9).
 class HistoryTab extends StatefulWidget {
-  const HistoryTab({super.key, required this.repo, required this.climber});
+  const HistoryTab({super.key, required this.repo, this.climber});
 
   final JournalRepository repo;
-  final String climber;
+
+  /// Name for the report; null means ask once and store it (local mode).
+  final String? climber;
 
   @override
   State<HistoryTab> createState() => _HistoryTabState();
@@ -33,6 +37,8 @@ class _HistoryTabState extends State<HistoryTab> {
 
   Future<void> _export(List<Ascent> ascents, Map<String, ClimbRoute> routes,
       Map<String, Crag> crags) async {
+    final climber = await _climberName();
+    if (climber == null || !mounted) return;
     setState(() => _exporting = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -41,7 +47,7 @@ class _HistoryTabState extends State<HistoryTab> {
         summary: summary,
         routes: routes,
         crags: crags,
-        climber: widget.climber,
+        climber: climber,
       );
       await shareYearlyReport(bytes, _year);
     } catch (e) {
@@ -49,6 +55,63 @@ class _HistoryTabState extends State<HistoryTab> {
           SnackBar(content: Text('Could not create the report: $e')));
     } finally {
       if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  /// The name on the report. In local mode it is asked for once and
+  /// stored on the device.
+  Future<String?> _climberName() async {
+    if (widget.climber != null) return widget.climber;
+    final repo = widget.repo;
+    if (repo is! LocalJournalRepository) return 'Climber';
+    final saved = await repo.climberName();
+    if (saved != null) return saved;
+    if (!mounted) return null;
+    final name = await _askName(null);
+    if (name != null) await repo.setClimberName(name);
+    return name;
+  }
+
+  Future<String?> _askName(String? current) async {
+    final controller = TextEditingController(text: current ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Your name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration:
+              const InputDecoration(hintText: 'Printed on your reports'),
+          onSubmitted: (v) => Navigator.pop(context, v),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    controller.dispose();
+    final trimmed = name?.trim() ?? '';
+    return trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> _menu(String action) async {
+    final repo = widget.repo;
+    if (repo is! LocalJournalRepository) return;
+    switch (action) {
+      case 'export':
+        await BackupActions(repo).export(context);
+      case 'import':
+        await BackupActions(repo).import(context);
+      case 'name':
+        final name = await _askName(await repo.climberName());
+        if (name != null) await repo.setClimberName(name);
     }
   }
 
@@ -148,6 +211,35 @@ class _HistoryTabState extends State<HistoryTab> {
                   ],
                   onChanged: (y) => setState(() => _year = y ?? _year),
                 ),
+                if (widget.repo is LocalJournalRepository)
+                  PopupMenuButton<String>(
+                    tooltip: 'Backup and settings',
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: _menu,
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'export',
+                        child: ListTile(
+                          leading: Icon(Icons.upload_file),
+                          title: Text('Export backup'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'import',
+                        child: ListTile(
+                          leading: Icon(Icons.restore),
+                          title: Text('Restore from backup'),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'name',
+                        child: ListTile(
+                          leading: Icon(Icons.badge_outlined),
+                          title: Text('Name on reports'),
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -29,11 +31,26 @@ android {
         versionName = flutter.versionName
     }
 
+    // Fixed key for sideloaded APKs, so each new build installs over the
+    // previous one and keeps the on-device logbook. This key is committed
+    // to the repo: replace it before any Play Store release.
+    val sideload = Properties().apply {
+        load(rootProject.file("signing/sideload.properties").inputStream())
+    }
+
+    signingConfigs {
+        create("sideload") {
+            storeFile = file(sideload.getProperty("storeFile"))
+            storePassword = sideload.getProperty("storePassword")
+            keyAlias = sideload.getProperty("keyAlias")
+            keyPassword = sideload.getProperty("keyPassword")
+            storeType = "PKCS12"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("sideload")
         }
     }
 }

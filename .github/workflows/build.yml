@@ -1,8 +1,8 @@
 name: Build
 
-# On every push: analyze, test and build the Android debug APK.
-# On main: also build the web demo (sample data, no Firebase) and publish
-# it to the gh-pages branch, served by GitHub Pages.
+# On every push: analyze, test and build the Android APK.
+# On main: also publish the APK as the "latest" release (direct download
+# link) and the web demo (sample data) to the gh-pages branch.
 
 on:
   push:
@@ -78,14 +78,27 @@ jobs:
           print('::error title=flutter test::' + msg)
           PY
 
-      - name: Build debug APK
-        run: flutter build apk --debug
+      - name: Build APK
+        run: |
+          flutter build apk --release --build-number=${{ github.run_number }}
+          cp build/app/outputs/flutter-apk/app-release.apk climbing-journal.apk
 
       - uses: actions/upload-artifact@v7
         with:
-          name: climbing-journal-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: climbing-journal-apk
+          path: climbing-journal.apk
           retention-days: 14
+
+      - name: Publish APK as the "latest" release
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest climbing-journal.apk \
+            --target "$GITHUB_SHA" \
+            --title "Climbing Journal · build ${{ github.run_number }}" \
+            --notes "Latest build from main (${GITHUB_SHA::7}). Install climbing-journal.apk on Android; it updates the installed app and keeps your logbook."
 
       - name: Build web demo
         run: flutter build web --release --dart-define=DEMO=true --base-href /climbing-journal/

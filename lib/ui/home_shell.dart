@@ -10,12 +10,15 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     required this.repo,
-    required this.climber,
+    this.climber,
     this.onSignOut,
   });
 
   final JournalRepository repo;
-  final String climber;
+
+  /// Name printed on the yearly report. Null in local mode, where the
+  /// app asks for it once and stores it on the device.
+  final String? climber;
   final VoidCallback? onSignOut;
 
   @override

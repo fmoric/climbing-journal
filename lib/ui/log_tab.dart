@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
 import 'package:flutter/material.dart';
 
 import '../data/journal_repository.dart';
@@ -80,8 +81,23 @@ class _LogTabState extends State<LogTab> {
                   : Icons.terrain),
               title: Text(c.name,
                   style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: c.type == CragType.outdoor && c.location == null
+                  ? const Text('No location saved')
+                  : null,
               selected: c.id == _cragId,
               onTap: () => Navigator.pop(context, c),
+              trailing: widget.repo.isDemo || c.type == CragType.gym
+                  ? null
+                  : IconButton(
+                      tooltip: 'Save my current location for ${c.name}',
+                      icon: const Icon(Icons.my_location),
+                      onPressed: () async {
+                        final ok = await _saveLocation(c);
+                        if (ok && context.mounted) {
+                          Navigator.pop(context, c);
+                        }
+                      },
+                    ),
             ),
           ListTile(
             leading: const Icon(Icons.add),
@@ -97,9 +113,30 @@ class _LogTabState extends State<LogTab> {
     if (picked != null) _selectCrag(picked, 'Chosen manually');
   }
 
+  /// Stores the phone's position on the crag, so GPS finds it next time.
+  Future<bool> _saveLocation(Crag crag) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final pos = await const LocationService().current();
+    if (pos == null) {
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Location unavailable. Check that GPS is on.')));
+      return false;
+    }
+    widget.repo.updateCrag(Crag(
+      id: crag.id,
+      name: crag.name,
+      type: crag.type,
+      location: GeoPoint(pos.lat, pos.lng),
+    ));
+    messenger.showSnackBar(
+        SnackBar(content: Text('Location saved for ${crag.name}.')));
+    return true;
+  }
+
   Future<Crag?> _newCrag() async {
     final name = TextEditingController();
     var type = CragType.outdoor;
+    var here = !widget.repo.isDemo;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -123,6 +160,14 @@ class _LogTabState extends State<LogTab> {
                 selected: {type},
                 onSelectionChanged: (s) => setLocal(() => type = s.first),
               ),
+              if (type == CragType.outdoor && !widget.repo.isDemo)
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: here,
+                  onChanged: (v) => setLocal(() => here = v ?? false),
+                  title: const Text("I'm at this crag now"),
+                  subtitle: const Text('Saves the location for GPS'),
+                ),
             ],
           ),
           actions: [
@@ -139,7 +184,13 @@ class _LogTabState extends State<LogTab> {
     final text = name.text.trim();
     name.dispose();
     if (ok != true || text.isEmpty) return null;
-    final crag = Crag(id: widget.repo.newId(), name: text, type: type);
+    GeoPoint? location;
+    if (here && type == CragType.outdoor) {
+      final pos = await const LocationService().current();
+      if (pos != null) location = GeoPoint(pos.lat, pos.lng);
+    }
+    final crag = Crag(
+        id: widget.repo.newId(), name: text, type: type, location: location);
     widget.repo.createCrag(crag);
     return crag;
   }
@@ -194,10 +245,30 @@ class _LogTabState extends State<LogTab> {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
-              child: FilledButton.icon(
-                onPressed: () => _changeCrag(crags),
-                icon: const Icon(Icons.terrain),
-                label: const Text('Choose or add a crag'),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (crags.isEmpty) ...[
+                    const Text('Your logbook is empty',
+                        style: TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Add the crag or gym you climb at. Everything stays on '
+                      'this phone; export a backup from History.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.quiet),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  FilledButton.icon(
+                    onPressed: () => _changeCrag(crags),
+                    icon: const Icon(Icons.terrain),
+                    label: Text(crags.isEmpty
+                        ? 'Add a crag or gym'
+                        : 'Choose or add a crag'),
+                  ),
+                ],
               ),
             ),
           );
