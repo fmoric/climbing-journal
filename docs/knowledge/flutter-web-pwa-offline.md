@@ -48,6 +48,10 @@ Verified with Playwright: load online, wait for `navigator.serviceWorker.ready`,
 
 GPS (`geolocator`, needs HTTPS), camera and gallery (`image_picker`), keep screen on (`wakelock_plus`), share or download files (`share_plus`, `printing`), file import (`file_picker`).
 
+## A blank page means an uncaught build error
+
+In a release web build, an exception thrown while building a widget gives no red error screen: the page simply goes blank. The first one seen here: a helper returned `const []` (read-only) for short input, and the screen called `.sort()` on it, so the page went blank after the first typed letter. Lessons: never return `const` lists from functions whose callers may mutate the result, and make widget tests type text **letter by letter**, checking `tester.takeException()` after each step.
+
 ## Testing on canvas-rendered UIs
 
 Flutter draws to a canvas, so tests click coordinates: take a screenshot at a fixed viewport (390×844), read the target position, divide by the device scale factor, then `page.mouse.click(x, y)`. Grant geolocation in the browser context to test GPS paths.
