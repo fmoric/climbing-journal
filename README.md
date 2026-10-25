@@ -12,7 +12,7 @@ The functional spec is the living document in the Clibing Journal project.
 
 Download **[climbing-journal.apk](https://github.com/fmoric/climbing-journal/releases/download/latest/climbing-journal.apk)** on the phone and open it. Android asks once to allow installs from your browser or file app.
 
-Each push to `main` publishes a new build at the same link. Installing it updates the app and keeps your logbook.
+Each build (started by hand from the Actions tab) publishes the APK at the same link and updates the web app. Installing a new APK updates the app and keeps your logbook.
 
 **Web demo** (sample data, nothing saved): https://fmoric.github.io/climbing-journal/
 
