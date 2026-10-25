@@ -4,6 +4,10 @@ Offline-first climbing logbook. Flutter (Android, iOS, web).
 
 The functional spec is the living document in the Clibing Journal project.
 
+## Use it on a phone
+
+**Web app (works on managed phones):** open https://fmoric.github.io/climbing-journal/app/ in Chrome, then menu ⋮ → **Add to home screen** (or **Install app**). It opens like an app, works offline after the first visit, and keeps the logbook and photos in the browser's storage on the phone. Clearing Chrome's site data deletes them, so export a backup from History now and then.
+
 ## Install on Android
 
 Download **[climbing-journal.apk](https://github.com/fmoric/climbing-journal/releases/download/latest/climbing-journal.apk)** on the phone and open it. Android asks once to allow installs from your browser or file app.
@@ -11,6 +15,8 @@ Download **[climbing-journal.apk](https://github.com/fmoric/climbing-journal/rel
 Each push to `main` publishes a new build at the same link. Installing it updates the app and keeps your logbook.
 
 **Web demo** (sample data, nothing saved): https://fmoric.github.io/climbing-journal/
+
+Phones with a company work profile often block APK installs entirely; use the web app there.
 
 ## Modes
 

@@ -2,7 +2,8 @@ name: Build
 
 # On every push: analyze, test and build the Android APK.
 # On main: also publish the APK as the "latest" release (direct download
-# link) and the web demo (sample data) to the gh-pages branch.
+# link), and to GitHub Pages the web demo (/climbing-journal/, sample data)
+# and the installable web app (/climbing-journal/app/, local mode).
 
 on:
   push:
@@ -101,9 +102,19 @@ jobs:
             --notes "Latest build from main (${GITHUB_SHA::7}). Install climbing-journal.apk on Android; it updates the installed app and keeps your logbook."
 
       - name: Build web demo
-        run: flutter build web --release --dart-define=DEMO=true --base-href /climbing-journal/
+        run: |
+          flutter build web --release --dart-define=DEMO=true --base-href /climbing-journal/
+          python3 ci/web-app/prepare.py build/web demo
 
-      - name: Publish web demo to the gh-pages branch
+      - name: Build web app (local mode, installable, offline)
+        run: |
+          flutter build web --release --pwa-strategy=none --no-web-resources-cdn \
+            --base-href /climbing-journal/app/ --output build/web-app
+          python3 ci/web-app/prepare.py build/web-app app
+          rm -rf build/web/app
+          cp -r build/web-app build/web/app
+
+      - name: Publish web demo and app to the gh-pages branch
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           cd build/web
