@@ -1,13 +1,12 @@
 name: Build
 
-# On every push: analyze, test and build the Android APK.
-# On main: also publish the APK as the "latest" release (direct download
+# Analyze, test and build the Android APK. On main: also publish the APK as the "latest" release (direct download
 # link), and to GitHub Pages the web demo (/climbing-journal/, sample data)
 # and the installable web app (/climbing-journal/app/, local mode).
 
+# Runs only when started by hand (Actions tab → Build → Run workflow, or
+# the API), so routine pushes and docs changes cost no Actions minutes.
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -91,7 +90,7 @@ jobs:
           retention-days: 14
 
       - name: Publish APK as the "latest" release
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -115,7 +114,7 @@ jobs:
           cp -r build/web-app build/web/app
 
       - name: Publish web demo and app to the gh-pages branch
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main'
         run: |
           cd build/web
           touch .nojekyll
