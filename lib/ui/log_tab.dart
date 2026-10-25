@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' show GeoPoint;
 import 'package:flutter/material.dart';
 
 import '../data/journal_repository.dart';
+import '../data/photo_store.dart';
 import '../domain/geo.dart';
 import '../domain/location_service.dart';
 import '../domain/stats.dart';
@@ -11,15 +12,18 @@ import '../models/crag.dart';
 import '../models/enums.dart';
 import '../models/sector.dart';
 import 'add_route_screen.dart';
+import 'climbing_mode_screen.dart';
 import 'quick_log_sheet.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Crag screen: nearest crag, sectors, routes; tap a route to log it.
+/// Crag screen: nearest crag, sectors, routes; tap a route to log it,
+/// or Start to open climbing mode with its photos.
 class LogTab extends StatefulWidget {
-  const LogTab({super.key, required this.repo});
+  const LogTab({super.key, required this.repo, required this.photos});
 
   final JournalRepository repo;
+  final PhotoStore photos;
 
   @override
   State<LogTab> createState() => _LogTabState();
@@ -214,16 +218,28 @@ class _LogTabState extends State<LogTab> {
     }
   }
 
-  Future<void> _log(ClimbRoute r, Crag crag, List<Sector> sectors) {
+  String _subtitle(ClimbRoute r, Crag crag, List<Sector> sectors) {
     final sector = sectors.where((s) => s.id == r.sectorId).firstOrNull;
-    final parts = [
+    return [
       crag.name,
       if (sector != null) sector.name,
       disciplineLabel(r.discipline),
-    ];
-    return showQuickLog(context,
-        repo: widget.repo, route: r, subtitle: parts.join(' · '));
+    ].join(' · ');
   }
+
+  Future<void> _log(ClimbRoute r, Crag crag, List<Sector> sectors) =>
+      showQuickLog(context,
+          repo: widget.repo, route: r, subtitle: _subtitle(r, crag, sectors));
+
+  Future<void> _start(ClimbRoute r, Crag crag, List<Sector> sectors) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => ClimbingModeScreen(
+          repo: widget.repo,
+          photos: widget.photos,
+          route: r,
+          subtitle: _subtitle(r, crag, sectors),
+        ),
+      ));
 
   @override
   Widget build(BuildContext context) {
@@ -364,6 +380,7 @@ class _LogTabState extends State<LogTab> {
                             route: shown[i],
                             best: best[shown[i].id],
                             onTap: () => _log(shown[i], crag, sectors),
+                            onStart: () => _start(shown[i], crag, sectors),
                           ),
                         ),
                       );
@@ -485,17 +502,25 @@ class _CragHeader extends StatelessWidget {
 }
 
 class _RouteTile extends StatelessWidget {
-  const _RouteTile({required this.route, required this.best, required this.onTap});
+  const _RouteTile({
+    required this.route,
+    required this.best,
+    required this.onTap,
+    required this.onStart,
+  });
 
   final ClimbRoute route;
   final AscentStyle? best;
   final VoidCallback onTap;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
     final meta = [
       disciplineLabel(route.discipline),
       if (route.isMultiPitch) '${route.pitches} pitches',
+      if (route.photoIds.length == 1) '1 photo',
+      if (route.photoIds.length > 1) '${route.photoIds.length} photos',
     ].join(' · ');
     return Card(
       child: InkWell(
@@ -522,7 +547,17 @@ class _RouteTile extends StatelessWidget {
               ),
               if (best != null) StylePill(best!),
               const SizedBox(width: 4),
-              const Icon(Icons.chevron_right, color: Color(0xFF8A8F8B)),
+              IconButton(
+                tooltip: 'Start: show photo while climbing',
+                onPressed: onStart,
+                icon: Icon(
+                  route.photoIds.isEmpty
+                      ? Icons.play_circle_outline
+                      : Icons.play_circle_fill,
+                  color: AppColors.accent,
+                  size: 32,
+                ),
+              ),
             ],
           ),
         ),

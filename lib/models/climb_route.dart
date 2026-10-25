@@ -14,6 +14,7 @@ class ClimbRoute {
     this.pitches = 1,
     this.setDate,
     this.retiredDate,
+    this.photoIds = const [],
   });
 
   final String id;
@@ -33,7 +34,26 @@ class ClimbRoute {
   final DateTime? setDate;
   final DateTime? retiredDate;
 
+  /// Photos of the route (topo, the wall with the line), oldest first.
+  /// IDs point into the device's photo store; the images are not part of
+  /// the route record.
+  final List<String> photoIds;
+
   bool get isMultiPitch => pitches > 1;
+
+  ClimbRoute copyWith({List<String>? photoIds}) => ClimbRoute(
+        id: id,
+        cragId: cragId,
+        sectorId: sectorId,
+        name: name,
+        discipline: discipline,
+        grade: grade,
+        gradeSystem: gradeSystem,
+        pitches: pitches,
+        setDate: setDate,
+        retiredDate: retiredDate,
+        photoIds: photoIds ?? this.photoIds,
+      );
 
   Map<String, dynamic> toMap() => {
         'cragId': cragId,
@@ -45,6 +65,7 @@ class ClimbRoute {
         'pitches': pitches,
         'setDate': timestampFrom(setDate),
         'retiredDate': timestampFrom(retiredDate),
+        'photoIds': photoIds,
       };
 
   factory ClimbRoute.fromMap(String id, Map<String, dynamic> m) => ClimbRoute(
@@ -60,5 +81,7 @@ class ClimbRoute {
         pitches: (m['pitches'] as num?)?.toInt() ?? 1,
         setDate: dateFrom(m['setDate']),
         retiredDate: dateFrom(m['retiredDate']),
+        photoIds: (m['photoIds'] as List?)?.whereType<String>().toList() ??
+            const [],
       );
 }

@@ -9,13 +9,14 @@ import 'theme.dart';
 import 'widgets.dart';
 
 /// Opens the quick-log sheet (FR-1): style, attempts, date, save.
-Future<void> showQuickLog(
+/// Returns true when an ascent was saved.
+Future<bool> showQuickLog(
   BuildContext context, {
   required JournalRepository repo,
   required ClimbRoute route,
   required String subtitle,
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -24,7 +25,7 @@ Future<void> showQuickLog(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
     builder: (_) =>
         QuickLogSheet(repo: repo, route: route, subtitle: subtitle),
-  );
+  ).then((saved) => saved ?? false);
 }
 
 class QuickLogSheet extends StatefulWidget {
@@ -85,7 +86,7 @@ class _QuickLogSheetState extends State<QuickLogSheet> {
       visibility: _share ? AscentVisibility.circle : AscentVisibility.private,
     ));
     final messenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(true);
     messenger.showSnackBar(SnackBar(
       content: Text('Logged ${widget.route.name} · ${styleLabel(_style)}'),
     ));

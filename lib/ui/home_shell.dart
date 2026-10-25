@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/journal_repository.dart';
+import '../data/photo_store.dart';
 import 'history_tab.dart';
 import 'log_tab.dart';
 import 'widgets.dart';
@@ -10,11 +11,13 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     required this.repo,
+    required this.photos,
     this.climber,
     this.onSignOut,
   });
 
   final JournalRepository repo;
+  final PhotoStore photos;
 
   /// Name printed on the yearly report. Null in local mode, where the
   /// app asks for it once and stores it on the device.
@@ -39,7 +42,7 @@ class _HomeShellState extends State<HomeShell> {
               child: IndexedStack(
                 index: _tab,
                 children: [
-                  LogTab(repo: widget.repo),
+                  LogTab(repo: widget.repo, photos: widget.photos),
                   HistoryTab(repo: widget.repo, climber: widget.climber),
                 ],
               ),

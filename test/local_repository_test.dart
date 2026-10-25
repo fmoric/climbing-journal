@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:climbing_journal/data/local_journal_repository.dart';
+import 'package:climbing_journal/data/photo_store.dart';
 import 'package:climbing_journal/models/ascent.dart';
 import 'package:climbing_journal/models/climb_route.dart';
 import 'package:climbing_journal/models/crag.dart';
@@ -126,5 +129,26 @@ void main() {
     expect(await repo.climberName(), isNull);
     await repo.setClimberName('  Filip  ');
     expect(await repo.climberName(), 'Filip');
+  });
+
+  test('route photo IDs are stored with the route', () async {
+    final repo = await _open('g.db');
+    await _seed(repo);
+    final route = (await repo.watchRoutes('c1').first).single;
+    expect(route.photoIds, isEmpty);
+    repo.updateRoute(route.copyWith(photoIds: ['p1.jpg', 'p2.jpg']));
+    await _settle();
+    final back = (await repo.watchRoutes('c1').first).single;
+    expect(back.photoIds, ['p1.jpg', 'p2.jpg']);
+    expect(back.name, 'Žuta ploča');
+  });
+
+  test('memory photo store saves, loads and deletes', () async {
+    final store = MemoryPhotoStore();
+    final id = await store.save(Uint8List.fromList([1, 2, 3]));
+    expect(id, endsWith('.jpg'));
+    expect(await store.load(id), [1, 2, 3]);
+    await store.delete(id);
+    expect(await store.load(id), isNull);
   });
 }

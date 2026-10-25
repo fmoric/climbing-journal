@@ -7,6 +7,7 @@ import 'data/demo_journal_repository.dart';
 import 'data/firestore_journal_repository.dart';
 import 'data/local_database.dart';
 import 'data/local_journal_repository.dart';
+import 'data/photo_store.dart';
 import 'screens/sign_in_screen.dart';
 import 'ui/home_shell.dart';
 import 'ui/theme.dart';
@@ -42,17 +43,19 @@ class _LocalHome extends StatefulWidget {
 }
 
 class _LocalHomeState extends State<_LocalHome> {
-  late final Future<LocalJournalRepository> _repo = openLocalDatabase().then(
-    (db) => LocalJournalRepository(
+  late final Future<(LocalJournalRepository, PhotoStore)> _open = () async {
+    final db = await openLocalDatabase();
+    final repo = LocalJournalRepository(
       db,
       onWriteError: (e, _) => debugPrint('Local write failed: $e'),
-    ),
-  );
+    );
+    return (repo, await PhotoStore.open());
+  }();
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<LocalJournalRepository>(
-      future: _repo,
+    return FutureBuilder<(LocalJournalRepository, PhotoStore)>(
+      future: _open,
       builder: (context, snap) {
         if (snap.hasError) {
           return Scaffold(
@@ -65,12 +68,12 @@ class _LocalHomeState extends State<_LocalHome> {
             ),
           );
         }
-        final repo = snap.data;
-        if (repo == null) {
+        final opened = snap.data;
+        if (opened == null) {
           return const Scaffold(
               body: Center(child: CircularProgressIndicator()));
         }
-        return HomeShell(repo: repo);
+        return HomeShell(repo: opened.$1, photos: opened.$2);
       },
     );
   }
@@ -85,16 +88,25 @@ class _DemoHome extends StatefulWidget {
 
 class _DemoHomeState extends State<_DemoHome> {
   final _repo = DemoJournalRepository.seeded();
+  final _photos = MemoryPhotoStore();
 
   @override
   Widget build(BuildContext context) =>
-      HomeShell(repo: _repo, climber: 'Demo climber');
+      HomeShell(repo: _repo, photos: _photos, climber: 'Demo climber');
 }
 
 /// Cloud mode (M2). Auth state is cached on the device, so a signed-in
 /// user reaches the app without signal.
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate();
+
+  @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  /// Photos stay on the device in cloud mode too, for now.
+  final Future<PhotoStore> _photos = PhotoStore.open();
 
   @override
   Widget build(BuildContext context) {
@@ -108,15 +120,25 @@ class _AuthGate extends StatelessWidget {
         }
         final user = snapshot.data;
         if (user == null) return const SignInScreen();
-        return HomeShell(
-          key: ValueKey(user.uid),
-          repo: FirestoreJournalRepository(
-            db: FirebaseFirestore.instance,
-            uid: user.uid,
-            onWriteError: (e, _) => debugPrint('Write rejected: $e'),
-          ),
-          climber: user.displayName ?? user.email ?? 'Climber',
-          onSignOut: () => FirebaseAuth.instance.signOut(),
+        return FutureBuilder<PhotoStore>(
+          future: _photos,
+          builder: (context, photos) {
+            if (!photos.hasData) {
+              return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()));
+            }
+            return HomeShell(
+              key: ValueKey(user.uid),
+              repo: FirestoreJournalRepository(
+                db: FirebaseFirestore.instance,
+                uid: user.uid,
+                onWriteError: (e, _) => debugPrint('Write rejected: $e'),
+              ),
+              photos: photos.data!,
+              climber: user.displayName ?? user.email ?? 'Climber',
+              onSignOut: () => FirebaseAuth.instance.signOut(),
+            );
+          },
         );
       },
     );

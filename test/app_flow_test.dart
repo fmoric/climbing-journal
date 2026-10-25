@@ -1,4 +1,5 @@
 import 'package:climbing_journal/data/demo_journal_repository.dart';
+import 'package:climbing_journal/data/photo_store.dart';
 import 'package:climbing_journal/ui/home_shell.dart';
 import 'package:climbing_journal/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,8 @@ Future<DemoJournalRepository> _pump(WidgetTester tester) async {
   final repo = DemoJournalRepository.seeded(now: DateTime(2026, 12, 31));
   await tester.pumpWidget(MaterialApp(
     theme: buildTheme(),
-    home: HomeShell(repo: repo, climber: 'Test climber'),
+    home: HomeShell(
+        repo: repo, photos: MemoryPhotoStore(), climber: 'Test climber'),
   ));
   await tester.pumpAndSettle();
   return repo;
@@ -61,5 +63,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('report (PDF)'), findsOneWidget);
     expect(find.textContaining('Grade pyramid'), findsOneWidget);
+  });
+
+  testWidgets('Start opens climbing mode with a Log button', (tester) async {
+    await _pump(tester);
+    await tester.tap(find.byTooltip('Start: show photo while climbing').first);
+    await tester.pumpAndSettle();
+    expect(find.text('No photo of this route yet'), findsOneWidget);
+    expect(find.text('Take a photo'), findsOneWidget);
+    expect(find.text('Log'), findsOneWidget);
+
+    await tester.tap(find.text('Log'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Save ·'), findsOneWidget);
   });
 }
