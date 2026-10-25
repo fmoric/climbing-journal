@@ -50,7 +50,12 @@ void main() {
     await _pump(tester);
     await tester.tap(find.text('Add route'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'dry spel');
+    // Typing letter by letter: short names must not break the screen.
+    for (final partial in ['d', 'dr', 'dry', 'dry spel']) {
+      await tester.enterText(find.byType(TextField).first, partial);
+      await tester.pump();
+      expect(tester.takeException(), isNull, reason: 'typing "$partial"');
+    }
     await tester.pumpAndSettle();
     expect(find.text('Dry Spell'), findsOneWidget);
     expect(find.text("It's a new route"), findsOneWidget);

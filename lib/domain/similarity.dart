@@ -6,7 +6,7 @@ import '../models/climb_route.dart';
 /// "Dry spel", "dry spell" and "Dry Spéll" all match "Dry Spell".
 List<ClimbRoute> similarRoutes(String name, Iterable<ClimbRoute> candidates) {
   final q = normalizeName(name);
-  if (q.length < 3) return const [];
+  if (q.length < 3) return [];
   final scored = <({ClimbRoute route, int distance})>[];
   for (final r in candidates) {
     final c = normalizeName(r.name);

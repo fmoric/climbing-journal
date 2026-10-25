@@ -79,7 +79,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     final text = _name.text.trim();
     if (text.isEmpty || _dismissedFor == text) return const [];
     // Same sector first, then the rest of the crag.
-    final matches = similarRoutes(text, widget.existing);
+    final matches = [...similarRoutes(text, widget.existing)];
     matches.sort((a, b) {
       final sa = a.sectorId == _sectorId ? 0 : 1;
       final sb = b.sectorId == _sectorId ? 0 : 1;
